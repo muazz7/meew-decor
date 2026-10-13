@@ -60,7 +60,7 @@ next-env.d.ts
 
 node_modules/
 .next/
-build/
+
 dist/
 .env
 .env.*
