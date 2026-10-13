@@ -57,3 +57,13 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+
+node_modules/
+.next/
+build/
+dist/
+.env
+.env.*
+!.env.example
+.vercel/
+.DS_Store
