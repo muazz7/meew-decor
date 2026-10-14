@@ -15,6 +15,13 @@
 .md-admin-brand-small { display: block; padding-top: 7px; font-family: Arial, sans-serif; font-size: 8px; letter-spacing: .34em; text-align: center; }
 .md-admin-header-label { display: flex; align-items: center; gap: 7px; border-left: 1px solid #dedfd7; padding-left: 28px; font-size: 12px; color: #737969; }
 .md-admin-store-link { display: inline-flex; align-items: center; gap: 8px; margin-left: auto; font-size: 12px; }
+.md-admin-signout { display: inline-flex; align-items: center; gap: 7px; font-size: 11px; color: #64785a; background: transparent; border: 0; padding: 10px 0; }
+.md-admin-login-form { width: 100%; max-width: 380px; text-align: left; }
+.md-admin-login-form fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.md-admin-login-form .md-admin-field { margin-bottom: 18px; }
+.md-admin-login-form .md-admin-button { width: 100%; margin-top: 8px; }
+.md-admin-login-note { color: #7a806e; font-size: 11px; line-height: 1.7; margin-top: 14px !important; }
+.md-admin-setup-details ul { padding-left: 16px; color: #7a806e; font-size: 11px; margin: 14px 0 0; }
 .md-admin-store-link:hover, .md-admin-footer a:hover, .md-status-help a:hover { color: #aa4a32; }
 .md-admin-shell { max-width: 1280px; padding: 52px 40px 0; margin: 0 auto; }
 .md-admin-intro { display: flex; justify-content: space-between; align-items: center; gap: 24px; }

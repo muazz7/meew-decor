@@ -13,12 +13,13 @@ const root = resolve(import.meta.dirname, '..');
 const temp = await mkdtemp(join(tmpdir(), 'meew-backend-'));
 const harness = { env: {}, user: null };
 globalThis.__backendHarness = harness;
-await writeFile(join(temp, 'cloudflare.mjs'), 'export const env = globalThis.__backendHarness.env;');
+await writeFile(join(temp, 'platform.mjs'), 'export const env = globalThis.__backendHarness.env; export const authProvider = \"chatgpt\"; export function getDatabase() { return env.DB; }');
+await writeFile(join(temp, 'headers.mjs'), 'export async function headers() { return new Headers(); }');
 await writeFile(join(temp, 'auth.mjs'), 'export async function getChatGPTUser() { return globalThis.__backendHarness.user; }');
 const moduleUrl = (name) => pathToFileURL(join(temp, `${name}.mjs`)).href;
-for (const name of ['validation', 'runtime', 'config', 'bkash', 'orders']) {
+for (const name of ['validation', 'runtime', 'config', 'bkash', 'orders', 'owner-auth']) {
   const source = await readFile(join(root, 'lib/server', `${name}.ts`), 'utf8');
-  const code = stripTypeScriptTypes(source).replace(/(["'])cloudflare:workers\1/g, JSON.stringify(moduleUrl('cloudflare'))).replace(/(["'])@\/app\/chatgpt-auth\1/g, JSON.stringify(moduleUrl('auth'))).replace(/(["'])@\/lib\/catalog\1/g, JSON.stringify(moduleUrl('catalog'))).replace(/(["'])\.\/(validation|runtime|config|bkash|orders)\1/g, (_, q, module) => JSON.stringify(moduleUrl(module)));
+  const code = stripTypeScriptTypes(source).replace(/(["'])@meew\/platform\1/g, JSON.stringify(moduleUrl('platform'))).replace(/(["'])next\/headers\1/g, JSON.stringify(moduleUrl('headers'))).replace(/(["'])@\/app\/chatgpt-auth\1/g, JSON.stringify(moduleUrl('auth'))).replace(/(["'])@\/lib\/catalog\1/g, JSON.stringify(moduleUrl('catalog'))).replace(/(["'])\.\/(validation|runtime|config|bkash|orders|owner-auth)\1/g, (_, q, module) => JSON.stringify(moduleUrl(module)));
   await writeFile(join(temp, `${name}.mjs`), code);
 }
 await writeFile(join(temp, 'catalog.mjs'), stripTypeScriptTypes(await readFile(join(root, 'lib/catalog.ts'), 'utf8')));
@@ -29,7 +30,7 @@ const orders = await import(moduleUrl('orders'));
 const { products } = await import(moduleUrl('catalog'));
 async function importRoute(name, path) {
   const source = await readFile(join(root, path), 'utf8');
-  const code = stripTypeScriptTypes(source).replace(/(["'])@\/lib\/server\/(validation|runtime|config|bkash|orders)\1/g, (_, q, module) => JSON.stringify(moduleUrl(module)));
+  const code = stripTypeScriptTypes(source).replace(/(["'])@\/lib\/server\/(validation|runtime|config|bkash|orders|owner-auth)\1/g, (_, q, module) => JSON.stringify(moduleUrl(module)));
   await writeFile(join(temp, `${name}.mjs`), code); return import(moduleUrl(name));
 }
 const checkoutRoute = await importRoute('checkout-route', 'app/api/checkout/route.ts');

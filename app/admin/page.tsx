@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowUpRight, Check, CheckCircle2, ChevronDown, CircleAlert, CreditCard, Leaf, Loader2, LockKeyhole, Package, RefreshCw, Save, Settings2, ShoppingBag, Truck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, CheckCircle2, ChevronDown, CircleAlert, CreditCard, Leaf, Loader2, LockKeyhole, LogOut, Package, RefreshCw, Save, Settings2, ShoppingBag, Truck } from "lucide-react";
 import "./admin.css";
 
 type Product = { id: string; name: string; price: number | null; stock: number | null; enabled: boolean };
@@ -24,6 +24,7 @@ type Order = {
 type PageError = { message: string; status: number };
 type Tab = "catalog" | "orders" | "settings";
 type OrdersResponse = { orders: Order[]; nextCursor?: string | null };
+type AuthInfo = { provider: "password" | "chatgpt"; configured: boolean; authenticated: boolean; issues: string[] };
 
 const money = (amount: number) => new Intl.NumberFormat("en-BD", { style: "currency", currency: "BDT", maximumFractionDigits: 2 }).format(amount);
 const readable = (value: string) => value.replace(/[_-]/g, " ");
@@ -52,15 +53,47 @@ export default function AdminPage() {
   const [filter, setFilter] = useState("all");
   const [refreshing, setRefreshing] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
+  const [auth, setAuth] = useState<AuthInfo | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [authBusy, setAuthBusy] = useState(false);
 
   const load = useCallback(async () => {
+    let identity: AuthInfo;
+    try { identity = await api<AuthInfo>("/api/admin/auth"); setAuth(identity); }
+    catch (cause) { setError(cause as PageError); setCatalog(null); setOrders([]); setLoading(false); return; }
+    if (!identity.authenticated) {
+      setCatalog(null); setOrders([]); setError({ status: identity.configured ? 401 : 503, message: identity.configured ? "Sign in to manage the store." : "Owner sign-in needs to be configured in the hosting environment." }); setLoading(false); return false;
+    }
     const results = await Promise.allSettled([api<Catalog>("/api/admin/catalog"), api<OrdersResponse>("/api/admin/orders")]);
-    if (results[0].status === "fulfilled") setCatalog(results[0].value);
+    if (results[0].status === "fulfilled") { setCatalog(results[0].value); setError(null); }
     else setError(results[0].reason as PageError);
     if (results[1].status === "fulfilled") { setOrders(results[1].value.orders); setNextCursor(results[1].value.nextCursor || null); setOrderError(""); }
     else setOrderError((results[1].reason as PageError).message || "Orders could not be loaded.");
     setLoading(false);
+    return true;
   }, []);
+
+  async function signIn(event: FormEvent) {
+    event.preventDefault(); setAuthBusy(true); setLoginError("");
+    try {
+      await api("/api/admin/auth/login", { method: "POST", body: JSON.stringify({ email: loginEmail, password: loginPassword }) });
+      setLoginPassword(""); setLoading(true); setError(null);
+      if (await load() === false) setLoginError("Your browser did not keep the secure session. Use HTTPS or localhost and allow cookies, then try again.");
+    } catch (cause) { setLoginError((cause as PageError).message || "Sign-in could not be completed. Please try again."); }
+    finally { setAuthBusy(false); }
+  }
+
+  async function signOut() {
+    if (dirty && !window.confirm("Sign out and discard your unsaved changes?")) return;
+    setAuthBusy(true);
+    try {
+      await api("/api/admin/auth/logout", { method: "POST", body: "{}" });
+      setDirty(false); setNotice(""); setSaveError(""); setLoginPassword(""); setLoading(true); await load();
+    } catch (cause) { setSaveError((cause as PageError).message || "Sign-out failed. Please try again."); }
+    finally { setAuthBusy(false); }
+  }
 
   useEffect(() => { void Promise.resolve().then(load); }, [load]);
   useEffect(() => {
@@ -111,6 +144,7 @@ export default function AdminPage() {
       <Link className="md-admin-brand" href="/" aria-label="Meew Decor home"><Leaf size={28} strokeWidth={1.3} /><span>meew<span className="md-admin-brand-small">DECOR</span></span></Link>
       <span className="md-admin-header-label"><LockKeyhole size={14} /> Owner studio</span>
       <Link href="/" className="md-admin-store-link">Visit store <ArrowUpRight size={16} /></Link>
+      {auth?.authenticated && (auth.provider === "password" ? <button className="md-admin-signout" disabled={authBusy} onClick={() => void signOut()}><LogOut size={15} />{authBusy ? "Signing out…" : "Sign out"}</button> : <a className="md-admin-signout" href="/signout-with-chatgpt?return_to=/admin" target="_top"><LogOut size={15} />Sign out</a>)}
     </header>
     <div className="md-admin-shell">
       {loading ? <div className="md-admin-state" role="status"><Loader2 className="md-spin" size={28} /><h1>Opening your studio</h1><p>Loading your store and orders.</p></div> : error ? <div className="md-admin-state md-admin-auth">
@@ -118,8 +152,8 @@ export default function AdminPage() {
         <p className="md-admin-eyebrow">A SPACE FOR THE OWNER</p>
         <h1>{error.status === 403 ? "This account doesn’t have access" : error.status === 401 ? "Welcome to your studio" : "Your studio needs a little setup"}</h1>
         <p>{error.status === 401 ? "Sign in with the account approved for Meew Decor to manage products, delivery and orders." : error.status === 403 ? "Use the email address configured as the store owner to open this private area." : error.message}</p>
-        <a className="md-admin-button" href="/signin-with-chatgpt?return_to=/admin" target="_top">Sign in with ChatGPT <ArrowUpRight size={16} /></a>
-        <details className="md-admin-setup-details"><summary>Owner setup information <ChevronDown size={16} /></summary><p>Set <code>STORE_ADMIN_EMAIL</code> in the hosting environment to the email address of the authorized owner. Hosted sign-in must be enabled. Your developer can configure payment credentials securely in the environment.</p><p>Never enter merchant passwords or secret keys into a page or chat.</p></details>
+        {auth?.provider === "password" && auth.configured ? <form className="md-admin-login-form" onSubmit={signIn}><fieldset disabled={authBusy}><label className="md-admin-field"><span>Owner email</span><input type="email" name="email" autoComplete="username" required maxLength={254} value={loginEmail} onChange={event => setLoginEmail(event.target.value)} /></label><label className="md-admin-field"><span>Password</span><input type="password" name="password" autoComplete="current-password" required maxLength={1024} value={loginPassword} onChange={event => setLoginPassword(event.target.value)} /></label>{loginError && <p className="md-admin-error-text" role="alert">{loginError}</p>}<button className="md-admin-button" type="submit">{authBusy ? <Loader2 size={16} className="md-spin" /> : <LockKeyhole size={16} />}{authBusy ? "Signing in…" : "Sign in to your studio"}</button><p className="md-admin-login-note">Use the owner password configured for this website. To reset it, contact the person managing your hosting.</p></fieldset></form> : auth?.provider === "chatgpt" ? <a className="md-admin-button" href="/signin-with-chatgpt?return_to=/admin" target="_top">Sign in with ChatGPT <ArrowUpRight size={16} /></a> : null}
+        <details className="md-admin-setup-details"><summary>Owner setup information <ChevronDown size={16} /></summary>{auth?.provider === "password" ? <><p>Your developer must set <code>STORE_ADMIN_EMAIL</code>, a generated <code>STORE_ADMIN_PASSWORD_HASH</code>, and a random <code>STORE_SESSION_SECRET</code> in the hosting environment.</p><p>The password setup command is <code>npm run admin:password</code>. The command asks for the password privately and produces configuration values. Changing the password hash or session secret signs out existing sessions.</p></> : <p>Set <code>STORE_ADMIN_EMAIL</code> in the hosting environment to the email address of the authorized owner. Hosted ChatGPT sign-in must be enabled.</p>}{auth?.issues?.length ? <ul>{auth.issues.map(issue => <li key={issue}>{issue}</li>)}</ul> : null}<p>Merchant passwords and payment keys belong only in secure hosting configuration.</p></details>
         <button className="md-admin-text-button" onClick={() => { setLoading(true); setError(null); void load(); }}><RefreshCw size={15} /> Check access again</button>
       </div> : catalog && <>
         <div className="md-admin-intro"><div><p className="md-admin-eyebrow">MEEW DECOR / OWNER STUDIO</p><h1>A little care, behind the scenes.</h1><p>Keep your collection current and every order moving.</p></div><span className={`md-admin-badge ${catalog.readiness.ready && catalog.checkoutEnabled ? "md-admin-badge-green" : "md-admin-badge-amber"}`}><span />{catalog.readiness.ready && catalog.checkoutEnabled ? catalog.readiness.mode === "sandbox" ? "Test checkout enabled" : "Checkout enabled" : "Checkout paused"}</span></div>

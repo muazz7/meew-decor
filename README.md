@@ -4,9 +4,20 @@ A mobile-friendly home décor storefront for [Meew Decor](https://www.facebook.c
 
 **Live commerce is disabled.** Product prices, stock, delivery charges, policies, owner access and merchant credentials require confirmation and configuration. The bKash adapter has not completed merchant sandbox or live acceptance. Review the [client handover](docs/CLIENT_HANDOVER.md) and [payment integration guide](docs/BKASH_INTEGRATION.md) before launch.
 
+## Vercel / GitHub import
+
+See [the Vercel deployment guide](docs/VERCEL_DEPLOYMENT.md). Import this folder as a Next.js project; `vercel.json` selects the production Next build automatically. The storefront deploys without secrets. Persistent orders and owner management use Turso plus the owner login variables, and bKash still requires merchant activation.
+
+```sh
+npm ci
+npm run dev:vercel
+npm run build:vercel
+npm run start:vercel
+```
+
 ## Stack and project layout
 
-React 19 and TypeScript use Next.js App Router conventions through Vinext/Vite. Deployment targets a Cloudflare Worker through Sites. Cloudflare D1 stores catalog settings, inventory reservations, orders and payment records; Drizzle defines the schema and SQL migrations.
+React 19 and TypeScript use Next.js App Router conventions through Vinext/Vite. Deployment targets either a Cloudflare Worker through Sites or native Next.js on Vercel. Cloudflare D1 or a remote Turso/libSQL database stores catalog settings, inventory reservations, orders and payment records; Drizzle defines the schema and SQL migrations.
 
 | Location | Purpose |
 | --- | --- |
@@ -23,9 +34,9 @@ React 19 and TypeScript use Next.js App Router conventions through Vinext/Vite. 
 
 The client handover records the source for each photograph and distinguishes visible product details from specifications that still need owner approval. Product content and images are currently edited in source; the dashboard manages prices, available stock, enabled products, policies and delivery rates.
 
-## Local development
+## Cloudflare / Sites local development
 
-Use Node.js 24 for the documented test workflow; the package declares Node.js `>=22.13.0`. Run commands from the project root.
+Use Node.js 24 for the documented test workflow; the package pins Node.js `24.x`. Run commands from the project root.
 
 ```sh
 npm run install:ci
@@ -54,7 +65,7 @@ Local Worker configuration can be placed in an ignored `.dev.vars` file using th
 
 Portable `npm run dev` provides a loopback-only development identity. To inspect the dashboard, set `STORE_ADMIN_EMAIL=seedy@sites.test` in local configuration, then visit `/signin-with-chatgpt?return_to=/admin`. This identity is a development fixture, not the business owner's account. Sign out at `/signout-with-chatgpt?return_to=/`.
 
-Hosted `/admin` requires real ChatGPT sign-in and the explicitly allowlisted owner email. The built Worker preview does not simulate sign-in. Do not add application routes for the platform-owned sign-in, sign-out or OAuth callback endpoints.
+Sites-hosted `/admin` requires real ChatGPT sign-in and the explicitly allowlisted owner email. The built Worker preview does not simulate sign-in. Do not add application routes for the platform-owned sign-in, sign-out or OAuth callback endpoints.
 
 ### Schema changes
 
@@ -90,4 +101,4 @@ npm start
 
 See [BKASH_INTEGRATION.md](docs/BKASH_INTEGRATION.md) for exact variable names, payment reconciliation, stock recovery, acceptance cases and operational limits. Automatic email/SMS, courier booking and automated refunds are not integrated. Existing business processes must handle those activities.
 
-Use the Sites publishing workflow for deployment. Do not distribute `.dev.vars`, `.env` files containing secrets, local database state, private order links or generated development state with the source handover.
+Use the Sites publishing workflow for Cloudflare deployment, or the Vercel guide for GitHub import. Do not distribute `.dev.vars`, `.env` files containing secrets, local database state, private order links or generated development state with the source handover.

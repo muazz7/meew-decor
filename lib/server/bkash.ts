@@ -1,6 +1,7 @@
 import { StoreError } from "./validation";
+import type { StoreDatabase } from "./database";
 
-export type BkashSettings = { DB?: D1Database; BKASH_ENV?: string; BKASH_API_VERSION?: string; BKASH_USERNAME?: string; BKASH_PASSWORD?: string; BKASH_APP_KEY?: string; BKASH_APP_SECRET?: string };
+export type BkashSettings = { DB?: StoreDatabase; BKASH_ENV?: string; BKASH_API_VERSION?: string; BKASH_USERNAME?: string; BKASH_PASSWORD?: string; BKASH_APP_KEY?: string; BKASH_APP_SECRET?: string };
 export type ProviderResult = Record<string, unknown>;
 
 // bKash Tokenized Checkout v1.2.0-beta, checkout-only mode (no stored wallet).

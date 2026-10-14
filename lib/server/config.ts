@@ -1,5 +1,6 @@
 import { products } from "@/lib/catalog";
-import { database, env, sha256 } from "./runtime";
+import { database, env, sha256, authProvider } from "./runtime";
+import { ownerAuthIssues } from "./owner-auth";
 import { StoreError, toMinor } from "./validation";
 
 type ProductRow = { id: string; price_minor: number | null; stock: number | null; enabled: number };
@@ -26,6 +27,7 @@ export async function readConfig() {
   const mode = env.BKASH_ENV === "live" || env.BKASH_ENV === "sandbox" ? env.BKASH_ENV : "unconfigured";
   const issues: string[] = [];
   if (!env.STORE_ADMIN_EMAIL) issues.push("Set the owner’s store administrator email.");
+  if (authProvider === "password" && ownerAuthIssues(env).length) issues.push("Configure a valid owner password hash and session secret before enabling checkout.");
   if (env.COMMERCE_ENABLED !== "true") issues.push("Enable commerce in the hosted runtime after launch checks.");
   if (mode === "unconfigured" || !env.BKASH_APP_KEY || !env.BKASH_APP_SECRET || !env.BKASH_USERNAME || !env.BKASH_PASSWORD) issues.push("Configure the bKash gateway credentials and environment.");
   if (env.BKASH_API_VERSION !== "v1.2.0-beta") issues.push("Confirm merchant compatibility with the supported bKash v1.2.0-beta API before enabling it. v2 is not implemented.");

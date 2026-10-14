@@ -1,3 +1,5 @@
+> Hosting: Vercel/GitHub setup is documented in [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md). The payment protocol and commercial launch gates below apply to both Vercel and Cloudflare.
+
 # bKash integration and launch handover
 
 ## Current status

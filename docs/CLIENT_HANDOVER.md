@@ -1,10 +1,10 @@
 # Meew Decor — client handover
 
-Prepared 13 October 2026.
+Updated 14 October 2026.
 
 The website and commerce workflow are built for review. **Live bKash selling is disabled.** Merchant activation, confirmed commercial details and public launch checks are still required before accepting real online orders.
 
-Planned private review address: [meew-decor.bouncygrape.chatgpt.site](https://meew-decor.bouncygrape.chatgpt.site). Availability and access at this address were **not yet verified** when this document was prepared. A private review link is not a public store or a working bKash callback destination.
+Cloudflare/Sites review address: [meew-decor.bouncygrape.chatgpt.site](https://meew-decor.bouncygrape.chatgpt.site), configured for owner-private access. Confirm the current deployment status in the hosting dashboard. A private review link is not a public store or a working bKash callback destination.
 
 ## Business and design direction
 
@@ -48,9 +48,11 @@ The brand-story image, `public/images/brand-home.jpg`, comes from the [business 
 
 No real payment has been taken. Merchant sandbox and live acceptance have not been completed. Automated email/SMS notifications, courier booking and automated refunds are not integrated; these remain part of the business's existing operations.
 
+For GitHub import on Vercel, follow [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md). Vercel uses a separate persistent Turso database and secure email/password owner sign-in. Cloudflare/Sites uses D1 and ChatGPT sign-in. Both targets retain the same storefront and commerce behavior.
+
 ## Using the owner studio
 
-1. Open `/admin` on the configured website. Sign in with ChatGPT using the email approved as `STORE_ADMIN_EMAIL`. This is an owner-only area; Facebook credentials are not used.
+1. Open `/admin` on the configured website. On Sites, sign in with ChatGPT using the email approved as `STORE_ADMIN_EMAIL`. On Vercel, use the configured owner email and password. This is an owner-only area; Facebook credentials are not used.
 2. In **Collection**, enter confirmed BDT prices and available quantities. Enable only products that are ready to sell, then choose **Save changes**. An enabled product needs both a price and stock quantity.
 3. In **Store settings**, enter the inside-Dhaka and outside-Dhaka delivery charges, the actual delivery policy and the approved return/refund policy. Review **Payment readiness** and save your changes.
 4. Enable checkout only as part of the launch process below. The server keeps checkout unavailable while required configuration is missing. Sandbox orders are identified as tests and cannot be fulfilled.

@@ -57,6 +57,7 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+/vite.config.backup.ts
 
 node_modules/
 .next/
